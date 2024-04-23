@@ -1,46 +1,60 @@
 import { useState } from 'react'
+import validator from 'validator'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
-import validator from 'validator'
 import _ from 'lodash'
+import { useAuth } from '../context/AuthContext'
 export default function Login() {
+    const { handleLogin} = useAuth() 
     const navigate = useNavigate()
+
     const [form, setForm] = useState({
         email: '',
         password: '',
-        serverErrors: null,
-        clientErrors:{}
+        serverErrors: null, 
+        clientErrors: {}
     })
-    const errors ={}
+
+    const errors = {}
 
     const runValidations = () => {
-        if(form.email.trim().length == 0){
+        if(form.email.trim().length == 0) {
             errors.email = 'email is required'
-        }else if(!validator.isEmail(form.email)){
+        } else if(!validator.isEmail(form.email)) {
             errors.email = 'invalid email format'
         }
-        if(form.password.trim().length == 0){
+
+        if(form.password.trim().length == 0) {
             errors.password = 'password is required'
-        }else if(form.password.trim().length < 8 || form.password.trim().length > 128){
-            errors.password = 'invalid password'
+        } else if(form.password.trim().length < 8 || form.password.trim().length > 128) {
+            errors.password = 'invalid password length'
         }
     }
+
     const handleSubmit = async (e) => {
         e.preventDefault() 
         const formData = _.pick(form, ['email', 'password'])
-        runValidations();
-        if(Object.keys(errors).length == 0){
-        try { 
-            const response = await axios.post('http://localhost:3333/users/login', formData) 
-            localStorage.setItem('token', response.data.token)
-            navigate('/')
-        } catch(err) {
-            setForm({...form, serverErrors: err.response.data.errors})
+
+        runValidations()
+
+        if(Object.keys(errors).length == 0 ) {
+            try { 
+                const response = await axios.post('http://localhost:3333/users/login', formData) 
+                localStorage.setItem('token', response.data.token)
+                const userResponse = await axios.get('http://localhost:3333/users/account', { 
+                    headers: {
+                        Authorization: localStorage.getItem('token')
+                    }
+                })
+                handleLogin(userResponse.data)
+                navigate('/')
+            } catch(err) {
+                setForm({...form, serverErrors: err.response.data.errors, clientErrors: {} })
+            }
+        } else {
+            setForm({...form, clientErrors: errors})
         }
-    }else{
-        setForm({...form,clientErrors: errors})
     }
-}
 
     const handleChange = (e) => {
         const { value, name } = e.target 
@@ -64,7 +78,8 @@ export default function Login() {
             )
         }
         return result 
-    }   
+    }
+    
     return (
         <div>
             <h2>Login</h2>
@@ -77,8 +92,9 @@ export default function Login() {
                     onChange={handleChange}
                     name="email" 
                     id="email"
-                /> 
-                 {form.clientErrors.email && <span>{form.clientErrors.email}</span>}<br />
+                />
+                { form.clientErrors.email && <span> { form.clientErrors.email } </span>}
+                 <br />
 
                 <label htmlFor="password">Enter password</label><br />
                 <input 
@@ -88,7 +104,8 @@ export default function Login() {
                     name="password"
                     id="password"
                 /> 
-                 {form.clientErrors.password && <span>{form.clientErrors.password}</span>}<br />
+                { form.clientErrors.password && <span> { form.clientErrors.password } </span> }
+                <br />
 
                 <input type="submit" /> 
             </form>
