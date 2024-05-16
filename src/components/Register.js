@@ -48,8 +48,6 @@ export default function Register() {
             role: role 
         }
         
-        
-
         runValidations()
 
         if(Object.keys(errors).length == 0) {
@@ -87,8 +85,6 @@ export default function Register() {
                     </ul>
                 </div> 
             )}
-
-           
 
             <form onSubmit={handleSubmit}>
                 <label htmlFor="username">Enter username</label><br />

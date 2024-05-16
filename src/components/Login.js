@@ -1,12 +1,14 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import validator from 'validator'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import _ from 'lodash'
 import { useAuth } from '../context/AuthContext'
 export default function Login() {
-    const { handleLogin} = useAuth() 
     const navigate = useNavigate()
+    // const { handleLogin } = useAuth() // useContext(AuthContext) -> { user, handleLogin, handleLogout}
+    const { dispatch } = useAuth() 
 
     const [form, setForm] = useState({
         email: '',
@@ -42,11 +44,25 @@ export default function Login() {
                 const response = await axios.post('http://localhost:3333/users/login', formData) 
                 localStorage.setItem('token', response.data.token)
                 const userResponse = await axios.get('http://localhost:3333/users/account', { 
-                    headers: {
+                    headers : {
                         Authorization: localStorage.getItem('token')
                     }
                 })
-                handleLogin(userResponse.data)
+                console.log(userResponse.data)
+                dispatch({ type: "LOGIN", payload: { account: userResponse.data } })
+                // let url 
+                // if(userResponse.data.role == 'candidate') {
+                //     url = 'http://localhost:3333/api/candidates/profile'
+                // } else {
+                //     url = 'http://localhost:3333/api/recruiter/profile'
+                // }
+                // const profileResponse = await axios.get(url, { 
+                //     headers: {
+                //         Authorization: localStorage.getItem('token')
+                //     }
+                // })
+                // // console.log(profileResponse.data)
+                // dispatch({ type: "LOGIN", payload: { account: userResponse.data, profile: profileResponse.data } })
                 navigate('/')
             } catch(err) {
                 setForm({...form, serverErrors: err.response.data.errors, clientErrors: {} })
@@ -109,6 +125,8 @@ export default function Login() {
 
                 <input type="submit" /> 
             </form>
+
+            <Link to="/register">Create an account</Link>
         </div>
     )
 }
